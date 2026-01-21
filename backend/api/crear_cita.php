@@ -1,61 +1,50 @@
 <?php
-// =====================================================
-// OBTENER CITAS - CON MySQL
-// =====================================================
-
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json; charset=utf-8');
 
 require_once '../config/database.php';
 require_once '../utils/funciones.php';
 
-// Validar método
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     respuestaJSON(['ok' => false, 'error' => 'Método no permitido'], 405);
 }
+
+$datos = leerJSON();
+
+// Validaciones
+requerirCampo($datos, 'nombre_paciente', 'Nombre obligatorio');
+requerirCampo($datos, 'telefono', 'Teléfono obligatorio');
+requerirCampo($datos, 'fecha', 'Fecha obligatoria');
+requerirCampo($datos, 'hora', 'Hora obligatoria');
 
 try {
     $pdo = getConnection();
     
-    // Query base
-    $sql = "SELECT * FROM citas WHERE 1=1";
-    $params = [];
+    // Convertir array de síntomas a JSON string para guardar en BD
+    $sintomasJSON = isset($datos['sintomas']) ? json_encode($datos['sintomas']) : '[]';
     
-    // Filtro por fecha
-    if (isset($_GET['fecha']) && !empty($_GET['fecha'])) {
-        $sql .= " AND fecha = :fecha";
-        $params[':fecha'] = $_GET['fecha'];
-    }
-    
-    // Filtro por prioridad
-    if (isset($_GET['prioridad']) && !empty($_GET['prioridad'])) {
-        $sql .= " AND prioridad = :prioridad";
-        $params[':prioridad'] = $_GET['prioridad'];
-    }
-    
-    // Filtro por estado
-    if (isset($_GET['estado']) && !empty($_GET['estado'])) {
-        $sql .= " AND estado = :estado";
-        $params[':estado'] = $_GET['estado'];
-    }
-    
-    // Ordenar por fecha y hora
-    $sql .= " ORDER BY fecha ASC, hora ASC";
-    
+    $sql = "INSERT INTO citas (nombre_paciente, telefono, fecha, hora, motivo, sintomas, puntaje_triage, prioridad, estado) 
+            VALUES (:nombre, :tel, :fecha, :hora, :motivo, :sintomas, :score, :prioridad, 'pendiente')";
+            
     $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    $citas = $stmt->fetchAll();
-    
-    respuestaJSON([
-        'ok' => true,
-        'citas' => $citas,
-        'total' => count($citas)
+    $stmt->execute([
+        ':nombre' => $datos['nombre_paciente'],
+        ':tel' => $datos['telefono'],
+        ':fecha' => $datos['fecha'],
+        ':hora' => $datos['hora'],
+        ':motivo' => $datos['motivo'] ?? '',
+        ':sintomas' => $sintomasJSON,
+        ':score' => $datos['puntaje_triage'] ?? 0,
+        ':prioridad' => $datos['prioridad'] ?? 'No urgente'
     ]);
-    
-} catch (PDOException $e) {
-    error_log("Error en obtener_citas.php: " . $e->getMessage());
+
     respuestaJSON([
-        'ok' => false,
-        'error' => 'Error al obtener las citas'
-    ], 500);
+        'ok' => true, 
+        'mensaje' => 'Cita creada exitosamente', 
+        'id' => $pdo->lastInsertId()
+    ]);
+
+} catch (PDOException $e) {
+    respuestaJSON(['ok' => false, 'error' => 'Error BD: ' . $e->getMessage()], 500);
 }
+?>

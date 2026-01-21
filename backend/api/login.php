@@ -1,12 +1,6 @@
 <?php
-// =====================================================
-// LOGIN - AUTENTICACIÓN
-// =====================================================
-
 session_start();
-
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Credentials: true');
 header('Content-Type: application/json; charset=utf-8');
 
 require_once '../config/database.php';
@@ -17,54 +11,24 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $datos = leerJSON();
+requerirCampo($datos, 'email', 'Email obligatorio');
+requerirCampo($datos, 'password', 'Contraseña obligatoria');
 
-requerirCampo($datos, 'email', 'El email es obligatorio');
-requerirCampo($datos, 'password', 'La contraseña es obligatoria');
+$pdo = getConnection();
+$stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = ? AND activo = 1");
+$stmt->execute([$datos['email']]);
+$usuario = $stmt->fetch();
 
-try {
-    $pdo = getConnection();
-    
-    // Buscar usuario
-    $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = ? AND activo = 1");
-    $stmt->execute([$datos['email']]);
-    $usuario = $stmt->fetch();
-    
-    if (!$usuario) {
-        respuestaJSON([
-            'ok' => false,
-            'error' => 'Credenciales incorrectas'
-        ], 401);
-    }
-    
-    // Verificar contraseña
-    if (!password_verify($datos['password'], $usuario['password'])) {
-        respuestaJSON([
-            'ok' => false,
-            'error' => 'Credenciales incorrectas'
-        ], 401);
-    }
-    
-    // Crear sesión
-    $_SESSION['usuario_id'] = $usuario['id'];
-    $_SESSION['usuario_email'] = $usuario['email'];
-    $_SESSION['usuario_nombre'] = $usuario['nombre'];
-    $_SESSION['usuario_rol'] = $usuario['rol'];
+if ($usuario && password_verify($datos['password'], $usuario['password'])) {
+    $_SESSION['uid'] = $usuario['id'];
+    $_SESSION['rol'] = $usuario['rol'];
     
     respuestaJSON([
         'ok' => true,
-        'mensaje' => 'Inicio de sesión exitoso',
-        'usuario' => [
-            'id' => $usuario['id'],
-            'email' => $usuario['email'],
-            'nombre' => $usuario['nombre'],
-            'rol' => $usuario['rol']
-        ]
+        'mensaje' => 'Bienvenido ' . $usuario['nombre'],
+        'usuario' => ['nombre' => $usuario['nombre'], 'rol' => $usuario['rol']]
     ]);
-    
-} catch (PDOException $e) {
-    error_log("Error en login.php: " . $e->getMessage());
-    respuestaJSON([
-        'ok' => false,
-        'error' => 'Error en el servidor'
-    ], 500);
+} else {
+    respuestaJSON(['ok' => false, 'error' => 'Credenciales inválidas'], 401);
 }
+?>
