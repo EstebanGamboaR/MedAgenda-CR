@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - MedAgenda-CR</title>
+  <link rel="stylesheet" href="css/style.css?v=2.0">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <h2>🏥 MedAgenda-CR</h2>
+      <p style="text-align: center; color: #666; margin-bottom: 30px;">Panel Administrativo</p>
+      
+      <form id="loginForm">
+        <label for="email">Correo electrónico:</label>
+        <input type="email" id="email" name="email" required placeholder="usuario@medagenda.com" autocomplete="email">
+        
+        <label for="password">Contraseña:</label>
+        <input type="password" id="password" name="password" required placeholder="Ingresa tu contraseña" autocomplete="current-password">
+        
+        <button type="submit">🔐 Iniciar sesión</button>
+      </form>
+      
+      <div class="login-info">
+        <strong>💡 Credenciales de prueba:</strong>
+        <p style="margin-top: 10px;">
+          <strong>Administrador:</strong><br>
+          📧 admin@medagenda.com<br>
+          🔑 admin123
+        </p>
+        <p style="margin-top: 10px;">
+          <strong>Recepcionista:</strong><br>
+          📧 recepcion@medagenda.com<br>
+          🔑 recepcion123
+        </p>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="index.html" style="color: var(--hospital-blue); text-decoration: none;">← Volver al inicio</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Verificar si ya está logueado
+    if (sessionStorage.getItem('medagenda_logged') === 'true') {
+      window.location.href = 'admin.html';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      
+      const usuariosValidos = {
+        'admin@medagenda.com': {
+          password: 'admin123',
+          rol: 'admin',
+          nombre: 'Administrador'
+        },
+        'recepcion@medagenda.com': {
+          password: 'recepcion123',
+          rol: 'recepcionista',
+          nombre: 'Recepcionista'
+        }
+      };
+      
+      if (usuariosValidos[email] && usuariosValidos[email].password === password) {
+        sessionStorage.setItem('medagenda_user', email);
+        sessionStorage.setItem('medagenda_logged', 'true');
+        sessionStorage.setItem('medagenda_role', usuariosValidos[email].rol);
+        sessionStorage.setItem('medagenda_nombre', usuariosValidos[email].nombre);
+        
+        alert('✅ Inicio de sesión exitoso\n\nBienvenido ' + usuariosValidos[email].nombre);
+        window.location.href = 'admin.html';
+      } else {
+        alert('❌ Credenciales incorrectas\n\nVerifica tu correo y contraseña.\n\n💡 Credenciales de prueba:\n• admin@medagenda.com / admin123\n• recepcion@medagenda.com / recepcion123');
+        document.getElementById('password').value = '';
+        document.getElementById('password').focus();
+      }
+    });
+  </script>
+</body>
+</html>
