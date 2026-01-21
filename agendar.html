@@ -1,68 +1,336 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Agendar Cita</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agendar Cita - MedAgenda-CR</title>
+  <link rel="stylesheet" href="css/style.css?v=2.0">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <h1>🏥 Agendar Cita</h1>
-            <a href="index.html">Volver</a>
-        </div>
-    </nav>
-
+  <!-- Navegación -->
+  <nav class="navbar">
     <div class="container">
-        <div class="card">
-            <form id="citaForm">
-                <h3>Datos del Paciente</h3>
-                <input type="text" id="nombre" placeholder="Nombre completo" required style="width: 100%; margin-bottom: 10px; padding: 8px;">
-                <input type="tel" id="telefono" placeholder="Teléfono" required style="width: 100%; margin-bottom: 10px; padding: 8px;">
-                <input type="date" id="fecha" required style="width: 100%; margin-bottom: 10px; padding: 8px;">
-                <input type="time" id="hora" required style="width: 100%; margin-bottom: 10px; padding: 8px;">
-                
-                <h3>Síntomas (Triage)</h3>
-                <label><input type="checkbox" value="fiebre_alta" class="sintoma"> Fiebre alta (>39°C)</label><br>
-                <label><input type="checkbox" value="dificultad_respirar" class="sintoma"> Dificultad para respirar</label><br>
-                <label><input type="checkbox" value="dolor_pecho" class="sintoma"> Dolor en el pecho</label><br>
-                <br>
-                <button type="submit" class="btn">Confirmar Cita</button>
-            </form>
-        </div>
+      <div class="nav-brand">
+        <h1>🏥 MedAgenda-CR</h1>
+      </div>
+      <ul class="nav-menu">
+        <li><a href="index.html" class="nav-link">Inicio</a></li>
+        <li><a href="agendar.html" class="nav-link active">Agendar cita</a></li>
+        <li><a href="login.html" class="nav-link">Panel administrativo</a></li>
+      </ul>
     </div>
+  </nav>
 
-    <script src="js/script.js"></script>
-    <script>
-        document.getElementById('citaForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+  <!-- Formulario de agendamiento -->
+  <section style="padding: 3rem 0; background: var(--beige-100);">
+    <div class="container">
+      <div class="appointment-form">
+        <h2 style="text-align: center; font-size: 2.5rem; color: var(--hospital-blue-dark); margin-bottom: 2rem;">
+          📋 Agendar Nueva Cita
+        </h2>
+        
+        <form id="appointmentForm">
+          <!-- SECCIÓN 1: Datos personales -->
+          <div class="form-section">
+            <h3>👤 Información del paciente</h3>
             
-            // Recolectar síntomas
-            const checkboxes = document.querySelectorAll('.sintoma:checked');
-            const sintomas = Array.from(checkboxes).map(cb => cb.value);
+            <div class="form-group">
+              <label for="nombre">Nombre completo *</label>
+              <input type="text" id="nombre" name="nombre" required placeholder="Ej: Juan Pérez Mora">
+            </div>
             
-            // Calcular triage
-            const score = window.medAgenda.calcularScoreTriage(sintomas);
-            const prioridad = window.medAgenda.obtenerPrioridad(score);
+            <div class="form-group">
+              <label for="telefono">Teléfono *</label>
+              <input type="tel" id="telefono" name="telefono" required placeholder="Ej: 8888-8888" pattern="[0-9]{4}-[0-9]{4}">
+            </div>
+            
+            <div class="form-group">
+              <label for="email">Correo electrónico (opcional)</label>
+              <input type="email" id="email" name="email" placeholder="Ej: ejemplo@email.com">
+            </div>
+          </div>
 
-            const datos = {
-                nombre_paciente: document.getElementById('nombre').value,
-                telefono: document.getElementById('telefono').value,
-                fecha: document.getElementById('fecha').value,
-                hora: document.getElementById('hora').value,
-                sintomas: sintomas,
-                puntaje_triage: score,
-                prioridad: prioridad
-            };
+          <!-- SECCIÓN 2: Información de la cita -->
+          <div class="form-section">
+            <h3>📅 Fecha y hora deseada</h3>
+            
+            <div class="form-group">
+              <label for="fecha">Fecha preferida *</label>
+              <input type="date" id="fecha" name="fecha" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="hora">Hora preferida *</label>
+              <input type="time" id="hora" name="hora" required min="07:00" max="16:00">
+            </div>
+          </div>
 
-            const res = await window.medAgenda.crearCita(datos);
-            if(res.ok) {
-                alert('✅ Cita creada con éxito. Prioridad asignada: ' + prioridad.toUpperCase());
-                window.location.href = 'index.html';
-            } else {
-                alert('Error: ' + res.error);
-            }
-        });
-    </script>
+          <!-- SECCIÓN 3: Triage (síntomas) -->
+          <div class="form-section">
+            <h3>🩺 Evaluación de síntomas (Triage)</h3>
+            <p style="color: var(--gray-500); margin-bottom: 1rem;">
+              Selecciona los síntomas que presentas. Esto ayudará a priorizar tu cita según urgencia médica.
+            </p>
+            
+            <div class="checkbox-group">
+              <div class="checkbox-item">
+                <input type="checkbox" id="fiebre" name="sintomas" value="fiebre">
+                <label for="fiebre">🌡️ Fiebre (más de 38°C)</label>
+              </div>
+              
+              <div class="checkbox-item">
+                <input type="checkbox" id="dolor-pecho" name="sintomas" value="dolor-pecho">
+                <label for="dolor-pecho">💔 Dolor en el pecho</label>
+              </div>
+              
+              <div class="checkbox-item">
+                <input type="checkbox" id="dificultad-respirar" name="sintomas" value="dificultad-respirar">
+                <label for="dificultad-respirar">😮‍💨 Dificultad para respirar</label>
+              </div>
+              
+              <div class="checkbox-item">
+                <input type="checkbox" id="sangrado" name="sintomas" value="sangrado">
+                <label for="sangrado">🩸 Sangrado abundante</label>
+              </div>
+              
+              <div class="checkbox-item">
+                <input type="checkbox" id="dolor-abdominal" name="sintomas" value="dolor-abdominal">
+                <label for="dolor-abdominal">🤰 Dolor abdominal intenso</label>
+              </div>
+              
+              <div class="checkbox-item">
+                <input type="checkbox" id="mareos" name="sintomas" value="mareos">
+                <label for="mareos">😵 Mareos o pérdida de conciencia</label>
+              </div>
+              
+              <div class="checkbox-item">
+                <input type="checkbox" id="lesion" name="sintomas" value="lesion">
+                <label for="lesion">🤕 Lesión por accidente</label>
+              </div>
+              
+              <div class="checkbox-item">
+                <input type="checkbox" id="embarazo" name="sintomas" value="embarazo">
+                <label for="embarazo">🤰 Complicaciones de embarazo</label>
+              </div>
+              
+              <div class="checkbox-item">
+                <input type="checkbox" id="tos" name="sintomas" value="tos">
+                <label for="tos">😷 Tos persistente</label>
+              </div>
+              
+              <div class="checkbox-item">
+                <input type="checkbox" id="control" name="sintomas" value="control">
+                <label for="control">📋 Control de rutina / Chequeo preventivo</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Display de prioridad calculada -->
+          <div id="prioridadDisplay" class="priority-display" style="display: none;">
+            <h4>Prioridad asignada:</h4>
+            <p id="prioridadTexto"></p>
+            <p id="scoreTexto" style="font-size: 1.2rem; margin-top: 0.5rem;"></p>
+          </div>
+
+          <!-- Botón de envío -->
+          <button type="submit" class="btn primary large" style="width: 100%; margin-top: 2rem;">
+            ✅ Agendar mi cita
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>MedAgenda-CR</h4>
+          <p>Sistema de gestión de citas para EBAIS de Costa Rica</p>
+        </div>
+        <div class="footer-section">
+          <h4>Enlaces</h4>
+          <ul>
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="agendar.html">Agendar cita</a></li>
+            <li><a href="login.html">Panel administrativo</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ========================================
+    // CONFIGURAR FECHA MÍNIMA (HOY)
+    // ========================================
+    document.addEventListener('DOMContentLoaded', function() {
+      const fechaInput = document.getElementById('fecha');
+      const hoy = new Date().toISOString().split('T')[0];
+      fechaInput.min = hoy;
+      fechaInput.value = hoy;
+    });
+
+    // ========================================
+    // SISTEMA DE TRIAGE - CÁLCULO DE PRIORIDAD
+    // ========================================
+    const sintomasCheckboxes = document.querySelectorAll('input[name="sintomas"]');
+    const prioridadDisplay = document.getElementById('prioridadDisplay');
+    const prioridadTexto = document.getElementById('prioridadTexto');
+    const scoreTexto = document.getElementById('scoreTexto');
+
+    // Puntajes por síntoma
+    const puntajes = {
+      'dolor-pecho': 100,
+      'dificultad-respirar': 90,
+      'sangrado': 85,
+      'mareos': 80,
+      'dolor-abdominal': 70,
+      'embarazo': 75,
+      'lesion': 65,
+      'fiebre': 50,
+      'tos': 30,
+      'control': 10
+    };
+
+    sintomasCheckboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', calcularPrioridad);
+    });
+
+    function calcularPrioridad() {
+      const seleccionados = Array.from(sintomasCheckboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+
+      if (seleccionados.length === 0) {
+        prioridadDisplay.style.display = 'none';
+        return;
+      }
+
+      // Calcular score total
+      let score = 0;
+      seleccionados.forEach(sintoma => {
+        score += puntajes[sintoma] || 0;
+      });
+
+      // Determinar nivel de prioridad
+      let nivel, emoji, descripcion;
+      if (score >= 80) {
+        nivel = 'emergencia';
+        emoji = '🔴';
+        descripcion = 'EMERGENCIA - Atención inmediata';
+      } else if (score >= 60) {
+        nivel = 'muy-urgente';
+        emoji = '🟠';
+        descripcion = 'MUY URGENTE - Atención prioritaria';
+      } else if (score >= 40) {
+        nivel = 'urgente';
+        emoji = '🟡';
+        descripcion = 'URGENTE - Atención en 24-48 horas';
+      } else if (score >= 20) {
+        nivel = 'no-urgente';
+        emoji = '🔵';
+        descripcion = 'NO URGENTE - Atención en 3-7 días';
+      } else {
+        nivel = 'control';
+        emoji = '⚪';
+        descripcion = 'CONTROL - Cita programada regular';
+      }
+
+      // Mostrar resultado
+      prioridadDisplay.style.display = 'block';
+      prioridadTexto.textContent = `${emoji} ${descripcion}`;
+      scoreTexto.textContent = `Score de triage: ${score} puntos`;
+      
+      // Guardar en el formulario (campo oculto)
+      let hiddenPrioridad = document.getElementById('prioridadCalculada');
+      if (!hiddenPrioridad) {
+        hiddenPrioridad = document.createElement('input');
+        hiddenPrioridad.type = 'hidden';
+        hiddenPrioridad.id = 'prioridadCalculada';
+        hiddenPrioridad.name = 'prioridad';
+        document.getElementById('appointmentForm').appendChild(hiddenPrioridad);
+      }
+      hiddenPrioridad.value = nivel;
+
+      let hiddenScore = document.getElementById('scoreCalculado');
+      if (!hiddenScore) {
+        hiddenScore = document.createElement('input');
+        hiddenScore.type = 'hidden';
+        hiddenScore.id = 'scoreCalculado';
+        hiddenScore.name = 'score';
+        document.getElementById('appointmentForm').appendChild(hiddenScore);
+      }
+      hiddenScore.value = score;
+    }
+
+    // ========================================
+    // ENVIAR FORMULARIO
+    // ========================================
+    document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      // Recolectar datos
+      const nombre = document.getElementById('nombre').value.trim();
+      const telefono = document.getElementById('telefono').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const fecha = document.getElementById('fecha').value;
+      const hora = document.getElementById('hora').value;
+      
+      const sintomasSeleccionados = Array.from(sintomasCheckboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+
+      const prioridad = document.getElementById('prioridadCalculada')?.value || 'control';
+      const score = parseInt(document.getElementById('scoreCalculado')?.value || '0');
+
+      // Validar que seleccionó al menos un síntoma
+      if (sintomasSeleccionados.length === 0) {
+        alert('⚠️ Por favor selecciona al menos un síntoma o motivo de consulta');
+        return;
+      }
+
+      // Crear objeto de cita
+      const cita = {
+        id: 'CITA-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+        name: nombre,
+        phone: telefono,
+        email: email,
+        date: fecha,
+        time: hora,
+        symptoms: sintomasSeleccionados,
+        priority: prioridad,
+        score: score,
+        createdAt: new Date().toISOString(),
+        enEspera: false
+      };
+
+      // Guardar en localStorage
+      let citas = JSON.parse(localStorage.getItem('medagenda_appointments') || '[]');
+      citas.push(cita);
+      localStorage.setItem('medagenda_appointments', JSON.stringify(citas));
+
+      // Mostrar confirmación
+      alert(`✅ ¡Cita agendada exitosamente!\n\n` +
+            `📋 ID: ${cita.id.substring(0, 12)}...\n` +
+            `👤 Paciente: ${nombre}\n` +
+            `📅 Fecha: ${fecha}\n` +
+            `🕐 Hora: ${hora}\n` +
+            `⚕️ Prioridad: ${prioridad.toUpperCase()}\n` +
+            `🔢 Score: ${score}\n\n` +
+            `Recibirás recordatorios por WhatsApp/SMS antes de tu cita.\n\n` +
+            `Para consultas: 2000-0000`);
+
+      // Limpiar formulario
+      document.getElementById('appointmentForm').reset();
+      prioridadDisplay.style.display = 'none';
+
+      // Redirigir después de 2 segundos
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 2000);
+    });
+  </script>
 </body>
 </html>
